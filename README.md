@@ -28,7 +28,8 @@ conda activate mamba
 
 **For SMAX** (NEW):
 ```bash
-pip install jax jaxlib jaxmarl
+pip install "jax[cpu]==0.4.31"   
+pip install jaxmarl
 ```
 
 **For StarCraft (SMAC)**:
