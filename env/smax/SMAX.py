@@ -9,6 +9,7 @@ import jax.numpy as jnp
 import numpy as np
 from jaxmarl import make
 from jaxmarl.environments.smax import map_name_to_scenario
+from jaxmarl.wrappers.baselines import SMAXLogWrapper
 from gym.spaces import Discrete, Box
 
 
@@ -43,9 +44,10 @@ class SMAX:
             'observation_type': kwargs.get('observation_type', 'unit_list'),  # 'unit_list' or 'conic'
         }
         
-        # Create JAX environment
-        self.env = make("HeuristicEnemySMAX", **self.config)
-        # self.env = make("SMAX", **self.config)  # no heuristics
+        # Create JAX environment with SMAXLogWrapper for proper episode statistics
+        base_env = make("HeuristicEnemySMAX", **self.config)
+        # base_env = make("SMAX", **self.config)  # no heuristics
+        self.env = SMAXLogWrapper(base_env, replace_info=True)
         
         # Initialize random key
         self.key = jax.random.PRNGKey(seed)
@@ -156,13 +158,14 @@ class SMAX:
                 obs_array = obs_array.flatten()
             obs_dict[i] = obs_array
             
-            # Rewards
-            reward_dict[i] = float(rewards[agent])
+            # Rewards - use mean reward as in reference code
+            agent_reward = float(rewards[agent])
+            reward_dict[i] = agent_reward
             
             # Dones
             done_dict[i] = bool(dones[agent])
             
-            # Info
+            # Info - individual agent info
             info_dict[i] = {}
             if agent in infos:
                 for key, value in infos[agent].items():
@@ -171,17 +174,18 @@ class SMAX:
                     else:
                         info_dict[i][key] = value
         
-        # Check if episode is done
-        if dones.get("__all__", False) or self.cur_step >= self.max_steps:
+        # Episode done check
+        episode_done = dones.get("__all__", False) or self.cur_step >= self.max_steps
+        if episode_done:
             for i in range(self.n_agents):
                 done_dict[i] = True
-            
-            # check whether all enemies are dead
-            all_enemy_dead = jnp.all(jnp.logical_not(self.state.state.unit_alive[self.env.num_allies :]))
-            if all_enemy_dead:
-                info_dict['battle_won'] = True
-            else:
-                info_dict['battle_won'] = False
+        
+        # SMAXLogWrapper provides these statistics in infos when episode is done
+        # Extract them similar to reference code
+        if episode_done and 'returned_won_episode' in infos:
+            info_dict['battle_won'] = float(infos['returned_won_episode'].any())
+            info_dict['episode_return'] = float(infos['returned_episode_returns'].mean())
+            info_dict['episode_length'] = int(infos['returned_episode_lengths'].max())
         
         return obs_dict, reward_dict, done_dict, info_dict
     
@@ -197,7 +201,9 @@ class SMAX:
             
         avail_actions = []
         try:
-            avail_actions_dict = self.env.get_avail_actions(self.state)
+            # SMAXLogWrapper wraps the state, access env_state
+            state_to_use = self.state.env_state if hasattr(self.state, 'env_state') else self.state
+            avail_actions_dict = self.env.get_avail_actions(state_to_use)
             for agent in self.agents:
                 if agent in avail_actions_dict:
                     avail = np.array(avail_actions_dict[agent])
@@ -226,7 +232,9 @@ class SMAX:
             return None
             
         try:
-            avail_actions_dict = self.env.get_avail_actions(self.state)
+            # SMAXLogWrapper wraps the state, access env_state
+            state_to_use = self.state.env_state if hasattr(self.state, 'env_state') else self.state
+            avail_actions_dict = self.env.get_avail_actions(state_to_use)
             agent = self.agents[agent_id]
             if agent in avail_actions_dict:
                 return np.array(avail_actions_dict[agent]).tolist()

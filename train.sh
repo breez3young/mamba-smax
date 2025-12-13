@@ -4,10 +4,10 @@
 map_name="3s_vs_5z"
 env="smax"
 seed=1
-steps=1000
-mode=disabled
+steps=1500000
+mode=online
 
-python train.py \
+CUDA_VISIBLE_DEVICES=0 python train.py \
     --env $env \
     --env_name $map_name \
     --n_workers 2 \

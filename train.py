@@ -86,9 +86,9 @@ def prepare_smax_configs(env_name):
             "obs_builder_config": None}
 
 if __name__ == "__main__":
-    RANDOM_SEED = 23
+    # RANDOM_SEED = 23
     args = parse_args()
-    RANDOM_SEED += args.seed * 100
+    RANDOM_SEED = args.seed
     
     if args.env == Env.STARCRAFT:
         configs = prepare_starcraft_configs(args.env_name)
@@ -150,7 +150,7 @@ if __name__ == "__main__":
     global wandb
     import wandb
     wandb.init(
-        project=args.env,
+        project="MAMBA_" + args.env,
         mode=args.mode,
         group=f'mamba_{args.env_name}',
         name=run_name,
