@@ -239,10 +239,10 @@ Expected output: `✓ All checks passed!`
 If you find the **SMAX integration** in this fork useful for your research, please consider citing:
 
 ```bibtex
-@misc{zhang2024mamba_smax,
+@misc{zhang2025mamba_smax,
     author = {Zhang, Yang},
     title = {MAMBA with SMAX Integration},
-    year = {2024},
+    year = {2025},
     publisher = {GitHub},
     howpublished = {\url{https://github.com/breez3young/mamba-smax}},
     note = {SMAX environment integration with enhanced logging and data export for multi-agent reinforcement learning research}
