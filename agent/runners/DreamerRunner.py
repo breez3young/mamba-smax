@@ -131,6 +131,15 @@ class DreamerRunner:
                 eval_win_rates.append(eval_win_rate)
                 eval_ret_list.append(eval_returns)
 
+                # Save PKL data immediately after each evaluation
+                stored_dict = {
+                    'steps': np.array(steps),
+                    'eval_win_rates': np.array(eval_win_rates),
+                    'eval_returns': np.array(eval_ret_list),
+                }
+                with open(self.save_path, 'wb') as f:
+                    pickle.dump(stored_dict, f)
+
                 if self.env_type in [Env.STARCRAFT, Env.SMAX]:
                     print(f"Steps: {save_interval_steps}, Eval_win_rate: {eval_win_rate}, Eval_returns: {eval_returns}, Mean episode length {aver_eval_steps}")
                 else:
@@ -141,16 +150,3 @@ class DreamerRunner:
                 break
             
             self.server.append(info['idx'], self.learner.params())
-
-        # store log data locally
-        steps = np.array(steps)
-        eval_win_rates = np.array(eval_win_rates)
-        eval_ret = np.array(eval_ret_list)
-        stored_dict = {
-            'steps': steps,
-            'eval_win_rates': eval_win_rates,
-            'eval_returns': eval_ret,
-        }
-        with open(self.save_path, 'wb') as f:
-            pickle.dump(stored_dict, f)
-
