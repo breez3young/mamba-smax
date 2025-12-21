@@ -150,7 +150,7 @@ if __name__ == "__main__":
     global wandb
     import wandb
     wandb.init(
-        project="MAMBA_" + args.env,
+        project=args.env,
         mode=args.mode,
         group=f'mamba_{args.env_name}',
         name=run_name,
